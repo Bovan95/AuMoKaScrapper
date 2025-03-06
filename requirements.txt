@@ -1,0 +1,7 @@
+beautifulsoup4==4.12.2
+fastapi==0.103.1
+pydantic==2.4.2
+requests==2.31.0
+uvicorn==0.23.2
+python-dotenv==1.0.0
+httpx==0.28.1
