@@ -3,9 +3,9 @@ from bs4 import BeautifulSoup
 from fastapi import HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
+from MobileMakes import MobileMakes
 import random
 import time
-import httpx 
 
 # List of User-Agents to rotate
 user_agents = [
@@ -14,6 +14,8 @@ user_agents = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Mobile/15E148 Safari/604.1"
 ]
+
+mobile_makes_instance = MobileMakes()
 
 # Output model
 class CarListing(BaseModel):
@@ -33,7 +35,7 @@ class SearchResponse(BaseModel):
     page: int
     results: List[CarListing]
 
-def get_headers():
+def get_headers(): #todo create utils
     return {
         "User-Agent": random.choice(user_agents),
         "Accept-Language": "en-US,en;q=0.9",
@@ -185,45 +187,5 @@ def scrape_mobile_de(url: str) -> SearchResponse:
         results=car_listings
     )
 
-def parse_make_options():
-    """
-    Parse the make options from mobile.de HTML content.
-        
-    Returns:
-        dict: Dictionary mapping make names to their IDs
-    """
-
-    MOBILE_DE_URL = "https://m.mobile.de/consumer/api/search/reference-data/filters/Car"
-
-    try:
-        with httpx.Client() as client:
-            response = client.get(MOBILE_DE_URL, headers=get_headers())
-            response.raise_for_status()
-            data = response.json()
-
-        # Extract 'ms' from the correct location
-        ms_data = data.get('data', {}).get('ms', [])
-        ms_hash_table = {item["i"]: item["n"] for item in ms_data}
-
-        return ms_hash_table
-    
-    except httpx.HTTPStatusError as e:
-        print(f"HTTP error: {e.response.status_code}")
-    except Exception as e:
-        print(f"Error: {str(e)}")
-    
 def get_makes():
-    """
-    Return the dictionary of makes for use in the API.
-    This function should be called during application startup.
-    
-    Returns:
-        list: List of dictionaries with make ID and name
-    """
-    
-    makes_dict = parse_make_options()
-    
-    # Convert to list format for API
-    makes_list = [{"id": make_id, "name": make_name} for make_name, make_id in makes_dict.items()]
-    
-    return makes_list
+    return mobile_makes_instance.get_makes()

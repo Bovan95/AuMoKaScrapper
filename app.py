@@ -1,8 +1,7 @@
-
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
-import scrapeMobileDe
+import ScrapeMobile
 
 app = FastAPI(title="Mobile.de Scraper API", 
               description="API for scraping car listings from mobile.de",
@@ -17,6 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 @app.get("/", response_model=dict)
 async def root():
     return {
@@ -28,7 +29,7 @@ async def root():
         ]
     }
 
-@app.get("/search", response_model=scrapeMobileDe.SearchResponse)
+@app.get("/search", response_model=ScrapeMobile.SearchResponse)
 async def search_cars(
     make: str = Query(..., description="Vehicle make (manufacturer)"),
     model: Optional[str] = Query(None, description="Vehicle model"),
@@ -39,7 +40,7 @@ async def search_cars(
     page: int = Query(1, description="Page number")
 ):
     # Build the URL for the search
-    url = scrapeMobileDe.build_search_url(
+    url = ScrapeMobile.build_search_url(
         make=make,
         model=model,
         min_price=min_price,
@@ -50,13 +51,11 @@ async def search_cars(
     )
     
     # Scrape the data
-    return scrapeMobileDe.scrape_mobile_de(url)
+    return ScrapeMobile.scrape_mobile_de(url)
 
 @app.get("/makes", response_model=List[dict])
 async def get_makes():
-    # This would ideally scrape the list of makes from mobile.de
-    # For now, returning a static list of common makes
-    return scrapeMobileDe.get_makes()
+    return ScrapeMobile.get_makes()
 
 if __name__ == "__main__":
     import uvicorn
