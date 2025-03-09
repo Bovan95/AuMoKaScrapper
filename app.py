@@ -16,8 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
 @app.get("/", response_model=dict)
 async def root():
     return {
@@ -56,6 +54,13 @@ async def search_cars(
 @app.get("/makes", response_model=List[dict])
 async def get_makes():
     return ScrapeMobile.get_makes()
+
+@app.get("/models", response_model=List[dict])
+async def search_cars(
+    make: str = Query(..., description="Vehicle make (manufacturer)")
+):
+    # Scrape the data
+    return ScrapeMobile.get_models(make)
 
 if __name__ == "__main__":
     import uvicorn

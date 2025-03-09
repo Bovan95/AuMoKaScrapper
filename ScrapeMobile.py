@@ -6,6 +6,7 @@ from typing import List, Optional
 from MobileMakes import MobileMakes
 import random
 import time
+import httpx
 
 # List of User-Agents to rotate
 user_agents = [
@@ -189,3 +190,41 @@ def scrape_mobile_de(url: str) -> SearchResponse:
 
 def get_makes():
     return mobile_makes_instance.get_makes()
+
+def get_models_hash(make):
+        """
+        Parse the make options from mobile.de HTML content.
+            
+        Returns:
+            dict: Dictionary mapping make names to their IDs
+        """
+        MAKE_HASH = mobile_makes_instance.get_makes_hash()[make]
+        MOBILE_DE_URL = "https://m.mobile.de/consumer/api/search/reference-data/models/" + str(MAKE_HASH)
+
+        try:
+            with httpx.Client() as client:
+                response = client.get(MOBILE_DE_URL, headers=get_headers())
+                response.raise_for_status()
+                data = response.json()
+
+            # Create a dictionary to store values and labels
+            models_hash_table = {}
+
+            # Process the data
+            for item in data['data']:
+                # Handle items with optgroupLabel and nested items
+                if 'optgroupLabel' in item and 'items' in item:
+                    for sub_item in item['items']:
+                        models_hash_table[sub_item['value']] = sub_item['label']#todo add grouos
+                # Handle direct items
+                elif 'value' in item and 'label' in item:
+                    models_hash_table[item['value']] = item['label']
+            return models_hash_table
+        
+        except httpx.HTTPStatusError as e:
+            print(f"HTTP error: {e.response.status_code}")
+        except Exception as e:
+            print(f"Error: {str(e)}")
+
+def get_models(make):
+    return [{"id": make_id, "name": make_name} for make_name, make_id in get_models_hash(make).items()]
