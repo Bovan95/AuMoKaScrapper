@@ -44,24 +44,25 @@ def get_headers(): #todo create utils
         "Referer": "https://www.mobile.de/",
     }
 
-def build_search_url(make: str, model: Optional[str] = None, 
+def build_search_url(make: str, 
+                    model: Optional[str] = None, 
                     min_price: Optional[int] = None, max_price: Optional[int] = None,
                     min_year: Optional[int] = None, max_year: Optional[int] = None,
                     page: int = 1):
     base_url = "https://suchen.mobile.de/fahrzeuge/search.html"
-    
     params = {
         "isSearchRequest": "true",
         "s": "Car",  # Cars
         "pageNumber": page
     }
-    
-    # Add make (mandatory)
-    params["makeModelVariant1.makeId"] = make
-    
+    #ms=14600%3B19%3B%3B
+    #ms=14600%3B%3B%3B
     # Add optional model
+    modelID = ""
     if model:
-        params["makeModelVariant1.modelId"] = model
+        modelID = str(get_models_hash(make)[model])
+
+    params["ms"]= str(mobile_makes_instance.get_makes_hash()[make])+"%3B" + modelID + "%3B%3B"
     
     # Add price range
     if min_price:
@@ -179,8 +180,7 @@ def scrape_mobile_de(url: str) -> SearchResponse:
             car_listings.append(car_listing)
             
         except Exception as e:
-            # Skip this listing if there's an error
-            continue
+            print(f"Error: {str(e)}")
     
     return SearchResponse(
         total_results=total_results,
@@ -215,10 +215,10 @@ def get_models_hash(make):
                 # Handle items with optgroupLabel and nested items
                 if 'optgroupLabel' in item and 'items' in item:
                     for sub_item in item['items']:
-                        models_hash_table[sub_item['value']] = sub_item['label']#todo add grouos
+                        models_hash_table[sub_item['label']] = sub_item['value']#todo add grouos
                 # Handle direct items
                 elif 'value' in item and 'label' in item:
-                    models_hash_table[item['value']] = item['label']
+                    models_hash_table[item['label']] = item['value']
             return models_hash_table
         
         except httpx.HTTPStatusError as e:
